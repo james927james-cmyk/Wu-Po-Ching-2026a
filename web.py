@@ -35,6 +35,7 @@ def index():
     link += "<a href=/math>簡易計算機</a><hr>"
     link += "<a href=/cup>擲茭</a><hr>"
     link += "<br><a href=/read>讀取Firestore資料(根據lab遞減排序，取前4)</a><br>"
+    link += "<a href=/search>查詢老師研究室</a><br>"
     return link
 
 @app.route("/mis")
@@ -116,6 +117,37 @@ def read():
         
     return Result
 
+@app.route("/search", methods=["GET", "POST"])
+def search():
+    if request.method == "POST":
+        keyword = request.form.get("keyword")
+        db = firestore.client()
+        collection_ref = db.collection("靜宜資管")
+        docs = collection_ref.get()
+        
+        result = f"<h2>關於「{keyword}」的查詢結果：</h2>"
+        found = False
+        for doc in docs:
+            user = doc.to_dict()
+            if "name" in user and keyword in user["name"]:
+                result += f"<b>{user['name']}</b> 老師的研究室是在 <b>{user['lab']}</b><br><br>"
+                found = True
+        
+        if not found:
+            result += "很抱歉，找不到符合條件的老師資料。<br>"
+        
+        result += "<br><a href=/search>重新查詢</a> | <a href=/>回到首頁</a>"
+        return result
+    else:
+        html = """
+        <h1>查詢老師研究室</h1>
+        <form action="/search" method="post">
+            <input type="text" name="keyword" placeholder="請輸入老師姓名關鍵字" required>
+            <button type="submit">開始查詢</button>
+        </form>
+        <br><a href=/>回到首頁</a>
+        """
+        return html
 
 if __name__ == "__main__":
     app.run(debug=True)
