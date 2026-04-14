@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>簡易計算機</title>
+</head>
+<body>
+
+    <input type="number" id="x" placeholder="輸入 x">
+    
+    <select id="opt">
+        <option value="+">+</option>
+        <option value="-">-</option>
+        <option value="*">*</option>
+        <option value="/">/</option>
+    </select>
+    
+    <input type="number" id="y" placeholder="輸入 y">
+    
+    <button onclick="calculate()">計算</button>
+
+    <p id="result">結果會顯示在這裡</p>
+
+    <script>
+    function calculate() {
+        const x_val = document.getElementById('x').value;
+        const y_val = document.getElementById('y').value;
+        const opt = document.getElementById('opt').value;
+        const res_display = document.getElementById('result');
+
+        const x = parseFloat(x_val);
+        const y = parseFloat(y_val);
+
+        if (x_val === "" || y_val === "" || isNaN(x) || isNaN(y)) {
+            res_display.innerText = "請輸入完整數字";
+            return;
+        }
+
+        if (opt === "/" && y === 0) {
+            res_display.innerText = "除數不能為 0";
+            return;
+        }
+
+        let final_res;
+        if (opt === "+") final_res = x + y;
+        else if (opt === "-") final_res = x - y;
+        else if (opt === "*") final_res = x * y;
+        else if (opt === "/") final_res = x / y;
+
+        // 顯示結果
+        res_display.innerText = x + " " + opt + " " + y + " 的結果是：" + final_res;
+    }
+</script>
+
+</body>
+</html>
