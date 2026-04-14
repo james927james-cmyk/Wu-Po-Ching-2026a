@@ -1,5 +1,7 @@
+import firebase_admin
 from flask import Flask, render_template,request
 from datetime import datetime
+import random
 
 app = Flask(__name__)
 
@@ -12,6 +14,7 @@ def index():
     link += "<a href=/welcome?nick=柏慶&dep=靜宜大學>傳送使用者暱稱</a><hr>"
     link += "<a href=/account>post傳值</a><hr>"
     link += "<a href=/math>簡易計算機</a><hr>"
+    link += "<a href=/cup>擲茭</a><hr>"
 
     return link
 
