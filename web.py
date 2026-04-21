@@ -3,6 +3,9 @@ import json
 import firebase_admin
 from firebase_admin import credentials, firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
+import requests
+from bs4 import BeautifulSoup
+
 
 
 # 判斷是在 Vercel 還是本地
@@ -36,7 +39,13 @@ def index():
     link += "<a href=/cup>擲茭</a><hr>"
     link += "<a href=/read>讀取Firestore資料(根據lab遞減排序，取前4)</a><hr>"
     link += "<a href=/search>查詢老師研究室</a><hr>"
+    link += "<a href=/spider1>爬蟲測試</a><hr>"
     return link
+
+@app.route("/spider1")
+def spider1():
+    R = "20260401"
+    return R
 
 @app.route("/mis")
 def course():
