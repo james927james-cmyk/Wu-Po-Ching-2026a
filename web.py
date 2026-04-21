@@ -45,21 +45,27 @@ def index():
 
 @app.route("/movie1")
 def movie1():
-    R = ""
+    R = "<h1>即將上映電影</h1>"
+    R += "<ul>" 
 
     url = "https://www.atmovies.com.tw/movie/next/"
     Data = requests.get(url)
     Data.encoding = "utf-8"
-    #print(Data.text)
+    
     sp = BeautifulSoup(Data.text, "html.parser")
-    result=sp.select(".filmListAllX li")
+    result = sp.select(".filmListAllX li")
 
     for item in result:
-        R += item.find("img").get("alt") + "<br>"
-        R += "https://www.atmovies.com.tw/" + item.find("a").get("href") + "<br>"
-        print()
+        img_tag = item.find("img")
+        a_tag = item.find("a")
+        
+        if img_tag and a_tag:
+            movie_title = img_tag.get("alt")
+            movie_link = "https://www.atmovies.com.tw" + a_tag.get("href")
+            R += f"<li><a href='{movie_link}'>{movie_title}</a></li>"
 
-
+    R += "</ul>" 
+    R += "<br><a href=/>回到首頁</a>"
     return R
 
 
