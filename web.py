@@ -59,28 +59,43 @@ def movie3():
         found = False
         
         for doc in docs:
-            movie = doc.to_dict()
-            if "title" in movie and keyword in movie["title"]:
-                title = movie.get("title")
-                link = movie.get("hyperlink", "#")
-                date = movie.get("showDate", "無日期資料")
+            m = doc.to_dict()
+            if "title" in m and keyword in m["title"]:
+                title = m.get("title", "無資料")
+                showDate = m.get("showDate", "無資料")
+                raw_length = m.get("showLength")
+                if raw_length and raw_length.strip() != "" and raw_length != "無資料":
+                    showLength = raw_length
+                else:
+                    showLength = "尚無資訊"
+                movie_id = doc.id  
+                hyperlink = m.get("hyperlink", "#")
                 
-                result += f"<li><a href='{link}' target='_blank'><b>{title}</b></a> - 上映日期：{date}</li>"
+                result += f"""
+                <li>
+                    <b>電影名稱：</b>{title}<br>
+                    <b>上映日期：</b>{showDate}<br>
+                    <b>影片時長：</b>{showLength}<br>
+                    <b>電影編號：</b>{movie_id}<br>
+                    <b>介紹網站：</b><a href="{hyperlink}" target="_blank">{hyperlink}</a><br><br>
+                </li>
+                """
                 found = True
         
         result += "</ul>"
         
         if not found:
-            result += f"<p>很抱歉，資料庫中找不到包含「{keyword}」的電影。</p>"
+            result += f"<p>很抱歉，找不到包含「{keyword}」的電影資料。</p>"
         
         result += "<br><a href='/movie3'>重新查詢</a> | <a href='/'>回到首頁</a>"
         return result
+        
     else:
         html = """
         <h1>查詢電影資訊</h1>
         <form action="/movie3" method="post">
             <input type="text" name="keyword" placeholder="請輸入電影名稱關鍵字" required>
-            <button type="submit">搜尋</button>
+            <button type="submit">開始查詢</button>
         </form>
         <br><a href="/">回到首頁</a>
         """
