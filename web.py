@@ -10,10 +10,8 @@ from flask import Flask, render_template, request
 from datetime import datetime
 import random
 
-# 禁用 SSL 警告訊息
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# --- Firebase 初始化 ---
 if os.path.exists('serviceAccountKey.json'):
     cred = credentials.Certificate('serviceAccountKey.json')
 else:
@@ -26,7 +24,6 @@ if not firebase_admin._apps:
 
 app = Flask(__name__)
 
-# --- 定義天氣查詢用的 HTML 模板 ---
 HTML_FORM = """
 <!DOCTYPE html>
 <html>
@@ -64,7 +61,6 @@ def index():
     link += "<a href=/weather>查詢天氣</a><hr>"
     return link
 
-# --- 天氣查詢路由 ---
 @app.route('/weather')
 def weather():
     city_input = request.args.get('city')
@@ -72,7 +68,7 @@ def weather():
         return HTML_FORM.format(result_content="請在上方輸入框輸入縣市名稱以開始查詢。")
 
     city = city_input.replace("台", "臺")
-    token = "rdec-key-123-45678-011121314" # 建議換成你申請的氣象署 Token
+    token = "rdec-key-123-45678-011121314" 
     url = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001"
     
     params = {"Authorization": token, "format": "JSON", "locationName": city}
@@ -94,7 +90,6 @@ def weather():
     except Exception as e:
         return HTML_FORM.format(result_content=f"錯誤：{e}")
 
-# --- 十大肇事路口路由 ---
 @app.route('/opendata')
 def opendata():
     road_query = request.args.get('road', '') 
@@ -116,7 +111,6 @@ def opendata():
     except Exception as e:
         return f"錯誤：{e}"
 
-# --- 電影相關路由 ---
 @app.route("/movie3", methods=["GET", "POST"])
 def movie3():
     if request.method == "POST":
@@ -139,7 +133,6 @@ def movie3():
 
 @app.route("/movie2")
 def movie2():
-    # 爬蟲寫入 Firestore 邏輯 (保持原樣，僅修正 db 呼叫)
     try:
         url = "http://www.atmovies.com.tw/movie/next/"
         res = requests.get(url)
@@ -155,7 +148,6 @@ def movie2():
     except Exception as e:
         return str(e)
 
-# --- 其他基礎路由 (保持原樣) ---
 @app.route("/mis")
 def course(): return "<h1>資訊管理導論</h1><a href=/>回到首頁</a>"
 
@@ -166,8 +158,102 @@ def today():
     return render_template("today.html", datetime=formatted_date)
 
 @app.route("/about")
-def about(): return render_template("about.html")
+def about():
+    return render_template("about.html")
 
-# --- 啟動程式 (放在最後面，且只需一個) ---
+@app.route("/welcome", methods=["GET"])
+def welcome():
+    user = request.values.get("nick")
+    x = request.values.get("dep")
+    return render_template("welcome.html", name=user,dep=x)
+
+@app.route("/account", methods=["GET", "POST"])
+def account():
+    if request.method == "POST":
+        user = request.form["user"]
+        pwd = request.form["pwd"]
+        result = "您輸入的帳號是：" + user + "; 密碼為：" + pwd 
+        return result
+    else:
+        return render_template("account.html")
+
+@app.route("/math")
+def math():
+    return render_template("math.html")
+
+@app.route('/cup', methods=["GET"])
+def cup():
+    # 檢查網址是否有 ?action=toss
+    #action = request.args.get('action')
+    action = request.values.get("action")
+    result = None
+    
+    if action == 'toss':
+        # 0 代表陽面，1 代表陰面
+        x1 = random.randint(0, 1)
+        x2 = random.randint(0, 1)
+        
+        # 判斷結果文字
+        if x1 != x2:
+            msg = "聖筊：表示神明允許、同意，或行事會順利。"
+        elif x1 == 0:
+            msg = "笑筊：表示神明一笑、不解，或者考慮中，行事狀況不明。"
+        else:
+            msg = "陰筊：表示神明否定、憤怒，或者不宜行事。"
+            
+        result = {
+            "cup1": "/static/" + str(x1) + ".jpg",
+            "cup2": "/static/" + str(x2) + ".jpg",
+            "message": msg
+        }
+        
+    return render_template('cup.html', result=result)
+
+@app.route("/read")
+def read():
+    db = firestore.client()
+    
+    Result = "" 
+
+    collection_ref = db.collection("靜宜資管")
+    docs = collection_ref.order_by("lab", direction=firestore.Query.DESCENDING).limit(4).get()
+    
+    for doc in docs:
+        Result += "{}".format(doc.to_dict()) + "<br>"    
+        
+    return Result
+
+@app.route("/search", methods=["GET", "POST"])
+def search():
+    if request.method == "POST":
+        keyword = request.form.get("keyword")
+        db = firestore.client()
+        collection_ref = db.collection("靜宜資管")
+        docs = collection_ref.get()
+        
+        result = f"<h2>關於「{keyword}」的查詢結果：</h2>"
+        found = False
+        for doc in docs:
+            user = doc.to_dict()
+            if "name" in user and keyword in user["name"]:
+                result += f"<b>{user['name']}</b> 老師的研究室是在 <b>{user['lab']}</b><br><br>"
+                found = True
+        
+        if not found:
+            result += "很抱歉，找不到符合條件的老師資料。<br>"
+        
+        result += "<br><a href=/search>重新查詢</a> | <a href=/>回到首頁</a>"
+        return result
+    else:
+        html = """
+        <h1>查詢老師研究室</h1>
+        <form action="/search" method="post">
+            <input type="text" name="keyword" placeholder="請輸入老師姓名關鍵字" required>
+            <button type="submit">開始查詢</button>
+        </form>
+        <br><a href=/>回到首頁</a>
+        """
+        return html
+
 if __name__ == "__main__":
     app.run(debug=True)
