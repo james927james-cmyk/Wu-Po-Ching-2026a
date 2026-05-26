@@ -70,21 +70,6 @@ def index():
     link += "<a href=/ask>ask</a><hr>"
     return link
 
-@app.route("/webhook7", methods=["POST"])
-def webhook7():
-    # build a request object
-    req = request.get_json(force=True)
-    # fetch queryResult from json
-    action =  req.get("queryResult").get("action")
-    #msg =  req.get("queryResult").get("queryText")
-    #info = "動作：" + action + "； 查詢內容：" + msg
-    if (action == "rateChoice"):
-…
-    elif (action == "input.unknown"):
-        info =  req["queryResult"]["queryText"]
-    return make_response(jsonify({"fulfillmentText": info}))
-
-
 @app.route('/ask', methods=['GET', 'POST']) 
 def ask():
     if request.method == "POST":
@@ -425,6 +410,24 @@ def webhook3():
                 result += "片名：" + dict["title"] + "\n"
                 result += "介紹：" + dict["hyperlink"] + "\n\n"
         info += result
+
+    elif (action == "input.unknown"):
+        #info =  req["queryResult"]["queryText"]
+
+        # 2. 建立設定物件，設定你希望限制的最大 Token 數（例如 500）
+        ai_config = types.GenerateContentConfig(
+            max_output_tokens = 128
+        )
+
+
+
+        response = client.models.generate_content(
+            model='gemini-3.5-flash',
+            info =  req["queryResult"]["queryText"],
+            config=ai_config,
+        )
+    info = response.text
+
     return make_response(jsonify({"fulfillmentText": info}))
 
     
