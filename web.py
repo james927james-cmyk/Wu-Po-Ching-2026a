@@ -66,7 +66,7 @@ def index():
     link += "<a href=/rate>本週新片進DB</a><hr>"
     link += "<a href=/webhook3>本週分級</a><hr>"
     link += "<a href=/demo>demo</a><hr>"
-    link += "<a href=/demo>AI</a><hr>"
+    link += "<a href=/AI>AI</a><hr>"
     return link
 
 @app.route("/AI")
