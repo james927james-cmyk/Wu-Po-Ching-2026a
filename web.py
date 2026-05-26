@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 import urllib3 
 from flask import Flask, render_template, request, make_response, jsonify   
 from datetime import datetime
+from google import genai
 import random
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -23,6 +24,9 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 
 app = Flask(__name__)
+client = genai.Client()
+#client = genai.Client(api_key=api_key)
+
 
 HTML_FORM = """
 <!DOCTYPE html>
