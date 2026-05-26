@@ -393,48 +393,43 @@ def search():
 
 @app.route("/webhook3", methods=["POST"])
 def webhook3():
+    # build a request object
     req = request.get_json(force=True)
-    action = req.get("queryResult", {}).get("action")
-    
-    # 預設文字，避免所有條件都不符合時發生錯誤
-    info = "抱歉，我目前無法處理這個請求。"
-
-    if action == "rateChoice":
-        rate = req.get("queryResult", {}).get("parameters", {}).get("rate", "")
+    # fetch queryResult from json
+    action =  req.get("queryResult").get("action")
+    #msg =  req.get("queryResult").get("queryText")
+    #info = "動作：" + action + "； 查詢內容：" + msg
+    if (action == "rateChoice"):
+        rate =  req.get("queryResult").get("parameters").get("rate")
         info = "我是吳柏慶開發的電影聊天機器人,您選擇的電影分級是：" + rate + "，相關電影：\n"
-        
         db = firestore.client()
         collection_ref = db.collection("本週新片含分級")
         docs = collection_ref.get()
         result = ""
         for doc in docs:
-            movie_dict = doc.to_dict() # 避免使用內建關鍵字 dict
-            if rate in movie_dict.get("rate", ""):
-                result += "片名：" + movie_dict.get("title", "") + "\n"
-                result += "介紹：" + movie_dict.get("hyperlink", "") + "\n\n"
+            dict = doc.to_dict()
+            if rate in dict["rate"]:
+                result += "片名：" + dict["title"] + "\n"
+                result += "介紹：" + dict["hyperlink"] + "\n\n"
         info += result
 
-    elif action == "input.unknown":
-        user_text = req.get("queryResult", {}).get("queryText", "")
-        
-        # 修正：定義 Gemini 的設定
+    elif (action == "input.unknown"):
+        #info =  req["queryResult"]["queryText"]
+
+        # 2. 建立設定物件，設定你希望限制的最大 Token 數（例如 500）
         ai_config = types.GenerateContentConfig(
-            max_output_tokens=500
+            max_output_tokens = 500
         )
 
-        try:
-            # 修正：Gemini 接收提示詞的參數名稱為 contents
-            response = client.models.generate_content(
-                model='gemini-3.5-flash',
-                contents=user_text,
-                config=ai_config,
-            )
-            info = response.text
-        except Exception as e:
-            info = f"AI 回應發生錯誤：{str(e)}"
+
+        response = client.models.generate_content(
+        model='gemini-3.5-flash', 
+        contents='我想查詢靜宜大學資管系的評價？',
+        config=ai_config,
+        )
+        info = response.text
 
     return make_response(jsonify({"fulfillmentText": info}))
-
 
     
 
