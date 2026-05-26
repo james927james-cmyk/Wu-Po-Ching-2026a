@@ -9,6 +9,7 @@ import urllib3
 from flask import Flask, render_template, request, make_response, jsonify   
 from datetime import datetime
 from google import genai
+from google.genai import types
 import random
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -68,6 +69,7 @@ def index():
     link += "<a href=/demo>demo</a><hr>"
     link += "<a href=/AI>AI</a><hr>"
     link += "<a href=/ask>ask</a><hr>"
+    link += "<a href=/webhook3>webhook3</a><hr>"
     return link
 
 @app.route('/ask', methods=['GET', 'POST']) 
@@ -420,13 +422,12 @@ def webhook3():
         )
 
 
-
         response = client.models.generate_content(
             model='gemini-3.5-flash',
             info =  req["queryResult"]["queryText"],
             config=ai_config,
         )
-    info = response.text
+        info = response.text
 
     return make_response(jsonify({"fulfillmentText": info}))
 
