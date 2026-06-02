@@ -3,6 +3,7 @@ import json
 import firebase_admin
 from firebase_admin import credentials, firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
+from google.cloud import firestore
 import requests
 from bs4 import BeautifulSoup
 import urllib3 
@@ -393,50 +394,71 @@ def search():
 
 @app.route("/webhook3", methods=["POST"])
 def webhook3():
-    # build a request object
+    # 建立 request 物件
     req = request.get_json(force=True)
-    # fetch queryResult from json
-    action =  req.get("queryResult").get("action")
-    #msg =  req.get("queryResult").get("queryText")
-    #info = "動作：" + action + "； 查詢內容：" + msg
-    if (action == "rateChoice"):
-        rate =  req.get("queryResult").get("parameters").get("rate")
+    
+    # 初始化回覆文字，避免變數未定義
+    info = "抱歉，我目前無法理解您的意思。"
+    
+    # 安全取得 queryResult
+    query_result = req.get("queryResult", {})
+    action = query_result.get("action")
+
+    # 狀況一：觸發 rateChoice（電影分級查詢）
+    if action == "rateChoice":
+        parameters = query_result.get("parameters", {})
+        rate = parameters.get("rate", "")
+        
         info = "我是吳柏慶開發的電影聊天機器人,您選擇的電影分級是：" + rate + "，相關電影：\n"
+        
         db = firestore.client()
         collection_ref = db.collection("本週新片含分級")
         docs = collection_ref.get()
         result = ""
+        
         for doc in docs:
-            dict = doc.to_dict()
-            if rate in dict["rate"]:
-                result += "片名：" + dict["title"] + "\n"
-                result += "介紹：" + dict["hyperlink"] + "\n\n"
-        info += result
+            movie_dict = doc.to_dict()
+            # 確保欄位存在再進行比對
+            if "rate" in movie_dict and "title" in movie_dict and "hyperlink" in movie_dict:
+                if rate in movie_dict["rate"]:
+                    result += "片名：" + movie_dict["title"] + "\n"
+                    result += "介紹：" + movie_dict["hyperlink"] + "\n\n"
+        
+        info += result if result else "目前沒有找到符合該分級的電影。"
 
-    elif (action == "input.unknown"):
+    # 狀況二：觸發預設遞補意圖（外包給 Gemini AI）
+    elif action == "input.unknown":
+        query_text = query_result.get("queryText", "")
+        
         instruction_text = (
             "你是一個熱心且知識豐富的專業智慧助理。"
             "對於使用者的提問，請回覆重點的關鍵字，不要重述問題。"
         )
 
-
         ai_config = types.GenerateContentConfig(
-            max_output_tokens = 500,
+            max_output_tokens=500,
             system_instruction=instruction_text
         )
 
+        try:
+            # 呼叫 Gemini 模型
+            response = client.models.generate_content(
+                model='gemini-3.5-flash', 
+                contents=query_text,
+                config=ai_config,
+            )
+            
+            if response and response.text:
+                info = response.text
+            else:
+                info = "AI 目前沒有產生任何回應，請再試一次。"
+                
+        except Exception as e:
+            # 捕捉 AI API 呼叫失敗的錯誤，避免 Webhook 崩潰
+            info = f"AI 回應發生錯誤，請稍後再試。"
+            print(f"Gemini Error: {e}")
 
-        response = client.models.generate_content(
-        model='gemini-3.5-flash', 
-        contents=req["queryResult"]["queryText"],
-        config=ai_config,
-        )
-        if response.text:
-            info = response.text
-        else:
-            info = "抱歉，我現在無法生成回應，請稍後再試。"
-
-
+    # 回傳給 Dialogflow
     return make_response(jsonify({"fulfillmentText": info}))
 
     
