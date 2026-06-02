@@ -11,7 +11,6 @@ from datetime import datetime
 from google import genai
 from google.genai import types
 import random
-from google.genai import types
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
