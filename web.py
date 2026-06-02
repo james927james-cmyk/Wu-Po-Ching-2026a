@@ -10,7 +10,7 @@ from flask import Flask, render_template, request, make_response, jsonify
 from datetime import datetime
 from google import genai
 from google.genai import types
-import random
+import random                   
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -427,7 +427,7 @@ def webhook3():
 
 
         response = client.models.generate_content(
-        model='gemini-3.1-flash-lite    ', 
+        model='gemini-3.5-flash', 
         contents=req["queryResult"]["queryText"],
         config=ai_config,
         )
